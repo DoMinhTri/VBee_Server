@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 TTS Control Panel</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; padding: 50px; background: #f4f4f9; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 450px; }
+        h3 { margin-top: 0; color: #333; }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; }
+        #result { margin-top: 20px; word-break: break-all; font-size: 14px; }
+        audio { width: 100%; margin-top: 15px; }
+        .loading { color: #ff9800; font-weight: bold; }
+        .error { color: #f44336; }
+        .success { color: #4caf50; font-weight: bold; }
+        .link-box { background: #eee; padding: 10px; border-radius: 5px; margin-top: 10px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h3>Vbee TTS Generator</h3>
+    <textarea id="textInput" placeholder="Nhập nội dung muốn chuyển sang giọng nói..."></textarea>
+    <button id="submitBtn" onclick="generateAudio()">Chuyển đổi & Phát âm thanh</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    async function generateAudio() {
+        const text = document.getElementById('textInput').value;
+        const resultDiv = document.getElementById('result');
+        const btn = document.getElementById('submitBtn');
+        
+        if (!text) return alert("Vui lòng nhập chữ!");
+
+        // Khóa nút và hiển thị trạng thái chờ
+        btn.disabled = true;
+        resultDiv.innerHTML = '<p class="loading">⏳ Đang gọi API Vbee xử lý...</p>';
+
+        try {
+            // SỬA LỖI 1: Chuyển sang GET và đúng endpoint /esp32-tts
+            // encodeURIComponent giúp xử lý tiếng Việt có dấu trên URL
+            const serverUrl = `http://192.168.1.2:3000/esp32-tts?text=${encodeURIComponent(text)}`;
+            
+            const response = await fetch(serverUrl);
+            const data = await response.json();
+
+            // SỬA LỖI 2: Kiểm tra cấu trúc data.status === 1 và lấy link từ data.result.audio_link
+            if (data.status === 1 && data.result && data.result.audio_link) {
+                const audioUrl = data.result.audio_link;
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Chuyển đổi thành công!</p>
+                    <div class="link-box">
+                        <strong>Link MP3:</strong><br>
+                        <a href="${audioUrl}" target="_blank">${audioUrl}</a>
+                    </div>
+                    <audio controls autoplay src="${audioUrl}"></audio>
+                `;
+            } else {
+                resultDiv.innerHTML = `<p class="error">❌ Lỗi: ${data.message || 'Server không trả về link'}</p>`;
+            }
+        } catch (error) {
+            resultDiv.innerHTML = `<p class="error">❌ Lỗi kết nối Server: ${error.message}<br>Đảm bảo Node.js đang chạy tại 192.168.1.2:3000</p>`;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
