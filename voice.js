@@ -7,8 +7,8 @@ app.use(cors());
 app.use(express.json());
 
 const VBEE_API_URL = "https://vbee.vn/api/v1/tts"; 
-const APP_ID = "bfe6d5b6-d0b8-46ac-8fd2-15d002ca8ead"; 
-const TOKEN  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NzA2MzIzNTl9.2KNZ_y8i4D1jQ5pdOZznnHPMtp_97MvSN4JiPR0zIEg";
+const APP_ID = ""; 
+const TOKEN  = "";
 
 app.get('/esp32-tts', async (req, res) => {
     const text = req.query.text;
